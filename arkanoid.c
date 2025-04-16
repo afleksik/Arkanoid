@@ -32,7 +32,27 @@ typedef struct	s_vars {
     int		paddle_width;
     int		paddle_height;
     t_ball	ball;
+    int     paddle_left;
+    int     paddle_right;
 }				t_vars;
+
+int key_press(int keycode, t_vars *vars)
+{
+    if (keycode == LEFT_ARROW)
+        vars->paddle_left = 1;
+    else if (keycode == RIGHT_ARROW)
+        vars->paddle_right = 1;
+    return (0);
+}
+
+int key_release(int keycode, t_vars *vars)
+{
+    if (keycode == LEFT_ARROW)
+        vars->paddle_left = 0;
+    else if (keycode == RIGHT_ARROW)
+        vars->paddle_right = 0;
+    return (0);
+}
 
 void my_mlx_pixel_put(t_data *data, int x, int y, int color)
 {
@@ -43,10 +63,24 @@ void my_mlx_pixel_put(t_data *data, int x, int y, int color)
     }
 }
 
-int	update(void *param)
+int update(void *param)
 {
     t_vars *vars = (t_vars *)param;
     t_ball *ball = &vars->ball;
+
+    // Перемещение ракетки при удержании клавиш
+    if (vars->paddle_left)
+    {
+        vars->paddle_x -= 1;
+        if (vars->paddle_x < 0)
+            vars->paddle_x = 0;
+    }
+    if (vars->paddle_right)
+    {
+        vars->paddle_x += 1;
+        if (vars->paddle_x > 800 - vars->paddle_width)
+            vars->paddle_x = 800 - vars->paddle_width;
+    }
 
     // Обновление позиции мяча
     ball->x += ball->dx;
@@ -58,12 +92,16 @@ int	update(void *param)
     if (ball->y - ball->radius < 0)
         ball->dy = -ball->dy;
     // Столкновение с ракеткой
-    if (ball->y + ball->radius > vars->paddle_y && ball->x > vars->paddle_x && ball->x < vars->paddle_x + vars->paddle_width)
+    if (ball->y + ball->radius >= vars->paddle_y &&
+        ball->x >= vars->paddle_x &&
+        ball->x <= vars->paddle_x + vars->paddle_width)
         ball->dy = -ball->dy;
-    else if (ball->y + ball->radius > 800) {
-        mlx_destroy_window(vars->mlx, vars->mlx);
+    else if (ball->y - ball->radius > 800)
+    {
+        mlx_destroy_window(vars->mlx, vars->win);
         exit(0);
     }
+
     // Очистка изображения
     memset(vars->img.addr, 0, 800 * vars->img.line_length);
 
@@ -72,7 +110,7 @@ int	update(void *param)
         for (int x = vars->paddle_x; x < vars->paddle_x + vars->paddle_width; ++x)
             my_mlx_pixel_put(&vars->img, x, y, 0x00FFFDD0);
 
-    // Рисуем мяч        
+    // Отрисовка мяча
     for (int dy = -ball->radius; dy <= ball->radius; ++dy)
         for (int dx = -ball->radius; dx <= ball->radius; ++dx)
             if (dx * dx + dy * dy <= ball->radius * ball->radius)
@@ -81,6 +119,7 @@ int	update(void *param)
     mlx_put_image_to_window(vars->mlx, vars->win, vars->img.img, 0, 0);
     return (0);
 }
+
 
 int	key_hook(int keycode, t_vars *vars)
 {
@@ -124,16 +163,20 @@ int	main(void)
 
     var.paddle_x = 0;
     var.paddle_y = 700;
+    
+    var.paddle_left = 0;
+    var.paddle_right = 0;
+
     var.paddle_width = 250;
     var.paddle_height = 25;
-
-    var.ball.x = 400;
-    var.ball.y = 400;
+    var.ball.x = 100;
+    var.ball.y = 100;
     var.ball.dx = 0.3;
     var.ball.dy = 0.3;
     var.ball.radius = 10;
-
-    mlx_key_hook(var.win, key_hook, &var);
+    
+    mlx_hook(var.win, 2, 1L<<0, key_press, &var);
+    mlx_hook(var.win, 3, 1L<<1, key_release, &var);
     mlx_loop_hook(var.mlx, update, &var);
     mlx_loop(var.mlx);
 
