@@ -13,7 +13,7 @@
 1. **Клонируйте репозиторий:**
 
     ```bash
-    git clone https://github.com/afleksik/Arkanoid.git
+    git clone --recursive https://github.com/afleksik/Arkanoid.git
     ```
 
 2. **Перейдите в директорию проекта:**
@@ -22,7 +22,15 @@
     cd Arkanoid
     ```
 
-3. **Компиляция и запуск:**
+3. **Установка необходимой библиотеки и зависимостей**
+    ```bash
+    sudo apt update
+    sudo apt install gcc make xorg libxext-dev libbsd-dev
+    cd minilibx-linux
+    make
+    ```
+
+4. **Компиляция и запуск:**
     
     Для компиляции и запуска достаточно сделать следущее:
     ```bash

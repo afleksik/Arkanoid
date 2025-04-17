@@ -169,7 +169,7 @@ int	main(void)
 
     var.paddle_width = 250;
     var.paddle_height = 25;
-    var.ball.x = 100;
+    var.ball.x = 300;
     var.ball.y = 100;
     var.ball.dx = 0.3;
     var.ball.dy = 0.3;
