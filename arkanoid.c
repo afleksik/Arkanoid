@@ -2,7 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 
 #define LEFT_ARROW 65361
 #define RIGHT_ARROW 65363
@@ -34,6 +34,8 @@ typedef struct	s_vars {
     t_ball	ball;
     int     paddle_left;
     int     paddle_right;
+    int     bounce_count;
+    int     game_started;
 }				t_vars;
 
 int key_press(int keycode, t_vars *vars)
@@ -63,12 +65,40 @@ void my_mlx_pixel_put(t_data *data, int x, int y, int color)
     }
 }
 
+void draw_button(t_vars *vars)
+{
+    int button_width = 100;
+    int button_height = 50;
+    int button_x = 350;
+    int button_y = 375;
+    for (int y = button_y; y < button_y + button_height; ++y)
+        for (int x = button_x; x < button_x + button_width; ++x)
+            my_mlx_pixel_put(&vars->img, x, y, 0x00FFFFFF);
+    mlx_string_put(vars->mlx, vars->win, button_x + 10, button_y + 25, 0x66666666, "START");
+}
+
+int mouse_click(int button, int x, int y, t_vars *vars)
+{
+    if (button == 1 && x >= 350 && x <= 450 && y >= 375 && y <= 425 && !vars->game_started)
+    {
+        vars->game_started = 1;
+    }
+    return (0);
+}
+
 int update(void *param)
 {
     t_vars *vars = (t_vars *)param;
     t_ball *ball = &vars->ball;
 
-    // Перемещение ракетки при удержании клавиш
+    if (!vars->game_started)
+    {
+        draw_button(vars);
+        mlx_put_image_to_window(vars->mlx, vars->win, vars->img.img, 0, 0);
+        return (0);
+    }
+
+    // Перемещение ракетки
     if (vars->paddle_left)
     {
         vars->paddle_x -= 1;
@@ -82,7 +112,6 @@ int update(void *param)
             vars->paddle_x = 800 - vars->paddle_width;
     }
 
-    // Обновление позиции мяча
     ball->x += ball->dx;
     ball->y += ball->dy;
 
@@ -91,12 +120,17 @@ int update(void *param)
         ball->dx = -ball->dx;
     if (ball->y - ball->radius < 0)
         ball->dy = -ball->dy;
+
     // Столкновение с ракеткой
     if (ball->y + ball->radius >= vars->paddle_y &&
         ball->x >= vars->paddle_x &&
-        ball->x <= vars->paddle_x + vars->paddle_width)
+        ball->x <= vars->paddle_x + vars->paddle_width &&
+        ball->dy > 0)
+    {
         ball->dy = -ball->dy;
-    else if (ball->y - ball->radius > 800)
+        vars->bounce_count++;
+    }
+    else if (ball->y + ball->radius > 800)
     {
         mlx_destroy_window(vars->mlx, vars->win);
         exit(0);
@@ -114,27 +148,15 @@ int update(void *param)
     for (int dy = -ball->radius; dy <= ball->radius; ++dy)
         for (int dx = -ball->radius; dx <= ball->radius; ++dx)
             if (dx * dx + dy * dy <= ball->radius * ball->radius)
-                my_mlx_pixel_put(&vars->img, ball->x + dx, ball->y + dy, 0x00FF0000);
+                my_mlx_pixel_put(&vars->img, (int)(ball->x + dx), (int)(ball->y + dy), 0x00FF0000);
 
     mlx_put_image_to_window(vars->mlx, vars->win, vars->img.img, 0, 0);
-    return (0);
-}
 
+    // Отображение счетчика отбиваний
+    char count_str[50];
+    sprintf(count_str, "%d", vars->bounce_count);
+    mlx_string_put(vars->mlx, vars->win, 10, 10, 0xFFFFFF, count_str);
 
-int	key_hook(int keycode, t_vars *vars)
-{
-    if (keycode == LEFT_ARROW)
-    {
-        vars->paddle_x -= 100;
-        if (vars->paddle_x < 0)
-            vars->paddle_x = 0;
-    }
-    else if (keycode == RIGHT_ARROW)
-    {
-        vars->paddle_x += 100;
-        if (vars->paddle_x > 800 - vars->paddle_width)
-            vars->paddle_x = 800 - vars->paddle_width;
-    }
     return (0);
 }
 
@@ -163,10 +185,8 @@ int	main(void)
 
     var.paddle_x = 0;
     var.paddle_y = 700;
-    
     var.paddle_left = 0;
     var.paddle_right = 0;
-
     var.paddle_width = 250;
     var.paddle_height = 25;
     var.ball.x = 300;
@@ -174,9 +194,12 @@ int	main(void)
     var.ball.dx = 0.3;
     var.ball.dy = 0.3;
     var.ball.radius = 10;
-    
+    var.bounce_count = 0;
+    var.game_started = 0;
+
     mlx_hook(var.win, 2, 1L<<0, key_press, &var);
     mlx_hook(var.win, 3, 1L<<1, key_release, &var);
+    mlx_hook(var.win, 4, 1L<<2, mouse_click, &var);
     mlx_loop_hook(var.mlx, update, &var);
     mlx_loop(var.mlx);
 
