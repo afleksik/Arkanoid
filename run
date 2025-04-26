@@ -1,4 +1,4 @@
 #!/bin/bash
 
-gcc -Iminilibx-linux -Lminilibx-linux arkanoid.c -lmlx -lXext -lX11 -o arkanoid
+gcc -Iminilibx-linux -Lminilibx-linux arkanoid.c -lmlx -lXext -lX11 -lm -o arkanoid
 ./arkanoid
